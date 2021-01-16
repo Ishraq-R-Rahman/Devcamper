@@ -1,26 +1,86 @@
 const path = require('path');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
-// const geocoder = require('../utils/geocoder');
+const geocoder = require('../utils/geocoder');
 const Bootcamp = require('../models/Bootcamp');
+const url = require('url');
+let { query } = require('express');
 
 // @desc      Get all bootcamps
 // @route     GET /api/v1/bootcamps
 // @access    Public
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
-  const bootcamp = await Bootcamp.find()
+  // query = url.parse(req.originalUrl,true).query
+
+  let reqQuery = { ...req.query }
+  let removeFields = ['select','sort','limit','page']
+  removeFields.forEach(param => delete reqQuery[param] )
+  
+  // const bootcamp = await Bootcamp.find(query)
+  let query;
+  let queryStr = JSON.stringify(reqQuery) //avg[lte]
+
+  queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g , match => `$${match}`) //g here means global to search for operator beyond the first one ,b = boundary
+  
+  query = Bootcamp.find( JSON.parse(queryStr) ).populate({
+    path: 'courses',
+    select : 'title description'
+  }); //can't take anything else except dot notation for nested objects
+
+  if( req.query.select ){
+    const fields = req.query.select.split(',').join(' ')
+    query = query.select(fields)
+  }
+
+  if( req.query.sort ){
+    const sortBy = req.query.sort.split(',').join(' ')
+    query = query.sort(sortBy)
+  }else {
+    query = query.sort('-createdAt') //- for descending
+  }
+
+  //Pagination
+  const page = parseInt( req.query.page , 10 ) || 1
+  const limit = parseInt( req.query.limit , 10) || 25
+  const startIndex = (page - 1 ) * limit
+  const endIndex = page * limit
+  const total = await Bootcamp.countDocuments()
+  
+  query = query.skip( startIndex ).limit( limit )
+
+  //Executing Query
+  const bootcamp = await query;
   if( !bootcamp ){
     return next(
         new ErrorResponse( `Bootcamp has no data` , 404 )
     )
   }
 
+  //Pagination Result
+  const pagination = {}
+
+  if( endIndex < total ){
+    pagination.next = {
+      page : page + 1,
+      limit
+    }
+  }
+
+  if( startIndex > 0 ){
+    pagination.prev = {
+      page : page - 1,
+      limit
+    }
+  }
+
   res.status(200).json({
     success : true,
     count : bootcamp.length,
+    pagination,
     data : bootcamp
   });
 });
+
 
 // @desc      Get single bootcamp
 // @route     GET /api/v1/bootcamps/:id
@@ -69,23 +129,23 @@ exports.createBootcamp = asyncHandler(async (req, res, next) => {
 // @route     PUT /api/v1/bootcamps/:id
 // @access    Private
 exports.updateBootcamp = asyncHandler(async (req, res, next) => {
-  let bootcamp = await Bootcamp.findById(req.params.id);
+  // let bootcamp = await Bootcamp.findById(req.params.id);
 
-  if (!bootcamp) {
-    return next(
-      new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404)
-    );
-  }
+  // if (!bootcamp) {
+  //   return next(
+  //     new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404)
+  //   );
+  // }
 
-  // Make sure user is bootcamp owner
-  if (bootcamp.user.toString() !== req.user.id && req.user.role !== 'admin') {
-    return next(
-      new ErrorResponse(
-        `User ${req.params.id} is not authorized to update this bootcamp`,
-        401
-      )
-    );
-  }
+  // // Make sure user is bootcamp owner
+  // if (bootcamp.user.toString() !== req.user.id && req.user.role !== 'admin') {
+  //   return next(
+  //     new ErrorResponse(
+  //       `User ${req.params.id} is not authorized to update this bootcamp`,
+  //       401
+  //     )
+  //   );
+  // }
 
   bootcamp = await Bootcamp.findOneAndUpdate(req.params.id, req.body, {
     new: true,
@@ -108,16 +168,16 @@ exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
   }
 
   // Make sure user is bootcamp owner
-  if (bootcamp.user.toString() !== req.user.id && req.user.role !== 'admin') {
-    return next(
-      new ErrorResponse(
-        `User ${req.params.id} is not authorized to delete this bootcamp`,
-        401
-      )
-    );
-  }
+  // if (bootcamp.user.toString() !== req.user.id && req.user.role !== 'admin') {
+  //   return next(
+  //     new ErrorResponse(
+  //       `User ${req.params.id} is not authorized to delete this bootcamp`,
+  //       401
+  //     )
+  //   );
+  // }
 
-  bootcamp.remove();
+  bootcamp.remove(); // This activates the remove middleware in Bootcamp model ; findByIdAndDelete won't
 
   res.status(200).json({ success: true, data: {} });
 });
