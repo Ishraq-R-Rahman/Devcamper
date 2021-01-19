@@ -35,6 +35,11 @@ const CourseSchema = new mongoose.Schema({
         type : mongoose.Schema.ObjectId,
         ref : 'Bootcamp',
         required : true
+    },
+    user : {
+        type : mongoose.Schema.ObjectId,
+        ref : 'User',
+        required : true
     }
 })
 
@@ -58,7 +63,7 @@ CourseSchema.statics.getAverageCost = async function( bootcampId ){
             averageCost : Math.ceil(obj[0].averageCost  / 10 ) * 10
         })
     }catch( err ){
-        console.log(err);
+        console.error(err);
     }
 
 }
@@ -70,7 +75,7 @@ CourseSchema.post('save', function(){
 })
 
 // Call getAverageCost before remove
-CourseSchema.pre('remove', ()=>{
+CourseSchema.pre('remove', function(){
     this.constructor.getAverageCost( this.bootcamp )
 })
 
