@@ -1,0 +1,20 @@
+const express = require('express')
+const Review = require('../models/Review')
+
+const router = express.Router({ mergeParams : true}) // merging the url params
+
+const { getReviews , getReview , addReview} = require('../controllers/reviews')
+
+const advancedResults = require('../middleware/advancedResults')
+const { protect , authorize } = require('../middleware/auth')
+
+router.route('/').get( 
+    advancedResults( Review , {
+    path : 'bootcamp',
+    select : 'name description'
+}), getReviews )
+                .post(protect , authorize('user','admin') , addReview )
+
+router.route('/:id').get( getReview )
+        
+module.exports = router
