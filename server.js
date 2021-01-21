@@ -1,6 +1,5 @@
 const path = require('path');
 const express = require('express');
-const dotenv = require('dotenv');
 const morgan = require('morgan');
 const colors = require('colors');
 const fileupload = require('express-fileupload');
@@ -16,6 +15,8 @@ const connectDB = require('./config/db');
 
 // Load env vars
 if( process.env.NODE_ENV !== 'production' ){
+  const dotenv = require('dotenv');
+
   dotenv.config({ path: './config/config.env' });
 }
 
