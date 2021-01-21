@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
-const slugify = require('slugify');
+if( process.env.NODE_ENV !== 'production' ){
+  const slugify = require('slugify');
+}
 const geocoder = require('../utils/geocoder');
 
 const BootcampSchema = new mongoose.Schema(
@@ -113,7 +115,9 @@ const BootcampSchema = new mongoose.Schema(
 
 // Create bootcamp slug from the name
 BootcampSchema.pre('save', function(next) {
-  this.slug = slugify(this.name, { lower: true });
+  if( process.env.NODE_ENV !== 'production' ){
+    this.slug = slugify(this.name, { lower: true });
+  }
   next();
 });
 
