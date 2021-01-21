@@ -4,8 +4,9 @@ const colors = require('colors')
 const dotenv = require('dotenv')
 
 //Load env
-dotenv.config({path: './config/config.env'})
-
+if( process.env.NODE_ENV !== 'production' ){
+    dotenv.config({ path: './config/config.env' });
+  }
 //Load Models 
 const Bootcamp = require('./models/Bootcamp')
 const Course = require('./models/Course')
