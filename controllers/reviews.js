@@ -76,8 +76,75 @@ const addReview = asyncHandler( async ( req,res, next )=>{
 })
 
 
+/**
+ * @description Update review
+ * @route PUT /api/v1/reviews/:id
+ * @access Private
+ */
+
+const updateReview = asyncHandler( async ( req,res, next )=>{
+
+    let review = await Review.findById(req.params.id)
+
+    if(!review){
+        return next(new ErrorResponse(`No reivew with id of ${req.params.id} found`,404))
+    }
+
+    //Make sure review belongs to user or user is an admin
+    if( review.user.toString() !== req.user.id && req.user.role !== 'admin' ){
+        return next( new ErrorResponse(`Not authorized to update review`,401) )
+    }
+
+
+
+    review = await Review.findByIdAndUpdate(req.params.id , req.body , {
+        new : true,
+        runValidators: true
+    })
+
+    res.status(201).json({
+        success: true,
+        data : review
+    })
+    
+})
+
+
+/**
+ * @description Delete review
+ * @route DELETE /api/v1/reviews/:id
+ * @access Private
+ */
+
+const deleteReview = asyncHandler( async ( req,res, next )=>{
+
+    let review = await Review.findById(req.params.id)
+
+    if(!review){
+        return next(new ErrorResponse(`No reivew with id of ${req.params.id} found`,404))
+    }
+
+    //Make sure review belongs to user or user is an admin
+    if( review.user.toString() !== req.user.id && req.user.role !== 'admin' ){
+        return next( new ErrorResponse(`Not authorized to update review`,401) )
+    }
+
+
+
+    await review.remove()
+
+    res.status(200).json({
+        success: true,
+        data : {}
+    })
+    
+})
+
+
 module.exports = {
     getReviews,
     getReview,
-    addReview
+    addReview,
+    updateReview,
+    deleteReview
 }
