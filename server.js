@@ -35,12 +35,21 @@ const app = express();
 // Body parser
 app.use(express.json());
 
-// Cookie parser
-app.use(cookieParser());
+
 
 // Dev logging middleware
 if (process.env.NODE_ENV === 'development') {
+  // Cookie parser
+  app.use(cookieParser());
   app.use(morgan('dev'));
+  // Set security headers
+  app.use(helmet());  
+
+  // Prevent XSS attacks
+  app.use(xss());
+
+  // Enable CORS
+  app.use(cors());
 }
 
 // File uploading
@@ -49,11 +58,7 @@ app.use(fileupload());
 // Sanitize data
 app.use(mongoSanitize());
 
-// Set security headers
-app.use(helmet());
 
-// Prevent XSS attacks
-app.use(xss());
 
 // Rate limiting
 const limiter = rateLimit({
@@ -67,9 +72,6 @@ app.use(limiter);
 // Prevent http param pollution
 app.use(hpp());
 
-
-// Enable CORS
-app.use(cors());
 
 // Set static folder
 app.use(express.static(path.join(__dirname, 'public')));
