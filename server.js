@@ -12,10 +12,6 @@ const connectDB = require('./config/db');
 // Load env vars
 if( process.env.NODE_ENV !== 'production' ){
   const dotenv = require('dotenv');
-  const cookieParser = require('cookie-parser');
-  const cors = require('cors');
-  const helmet = require('helmet');
-  const xss = require('xss-clean');
 
   dotenv.config({ path: './config/config.env' });
 }
@@ -39,6 +35,12 @@ app.use(express.json());
 
 // Dev logging middleware
 if (process.env.NODE_ENV === 'development') {
+
+  const cookieParser = require('cookie-parser');
+  const cors = require('cors');
+  const helmet = require('helmet');
+  const xss = require('xss-clean');
+  
   // Cookie parser
   app.use(cookieParser());
   app.use(morgan('dev'));
